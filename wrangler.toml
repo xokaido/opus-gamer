@@ -1,0 +1,11 @@
+# Wrangler configuration for Cloudflare Workers static site
+name = "space-collector"
+compatibility_date = "2024-01-01"
+
+# Static assets configuration
+# Deploy the dist folder after building with `npm run build`
+[site]
+bucket = "./dist"
+
+# For Cloudflare Pages instead, use:
+# pages_build_output_dir = "./dist"
