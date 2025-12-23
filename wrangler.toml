@@ -1,9 +1,9 @@
-# Wrangler configuration for Cloudflare Pages
-# This is a static site, no Worker needed!
-
+# Wrangler configuration for Cloudflare Workers with Static Assets
 name = "opus-gamer"
+main = "worker.js"
 compatibility_date = "2025-12-13"
 
-# Cloudflare Pages configuration
-# The 'pages_build_output_dir' tells wrangler where the built static files are
-pages_build_output_dir = "./dist"
+# Static assets configuration
+# This serves files from ./dist as static assets
+[assets]
+directory = "./dist"
