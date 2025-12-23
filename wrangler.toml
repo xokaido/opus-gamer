@@ -3,6 +3,11 @@ name = "opus-gamer"
 main = "worker.js"
 compatibility_date = "2025-12-13"
 
+# Custom domain routes
+routes = [
+  { pattern = "game.menuhub.me", zone_name = "menuhub.me" }
+]
+
 # Static assets configuration
 # This serves files from ./dist as static assets
 [assets]
