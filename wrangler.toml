@@ -1,11 +1,9 @@
-# Wrangler configuration for Cloudflare Workers static site
-name = "space-collector"
-compatibility_date = "2024-01-01"
+# Wrangler configuration for Cloudflare Pages
+# This is a static site, no Worker needed!
 
-# Static assets configuration
-# Deploy the dist folder after building with `npm run build`
-[site]
-bucket = "./dist"
+name = "opus-gamer"
+compatibility_date = "2025-12-13"
 
-# For Cloudflare Pages instead, use:
-# pages_build_output_dir = "./dist"
+# Cloudflare Pages configuration
+# The 'pages_build_output_dir' tells wrangler where the built static files are
+pages_build_output_dir = "./dist"

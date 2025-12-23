@@ -11,6 +11,7 @@ import {
     isHighScore,
     getPlayerName
 } from '../storage/ScoreStorage';
+import { soundManager } from '../audio/SoundManager';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'gameover';
 
@@ -41,6 +42,7 @@ export class Game {
     private stars: number = 0;
 
     private screenShake: number = 0;
+    private lastTimeWarning: number = 0;
 
     // Event callbacks
     public onStateChange?: (state: GameState) => void;
@@ -144,6 +146,13 @@ export class Game {
         }
         this.onTimeChange?.(Math.ceil(this.timeRemaining));
 
+        // Time warning beep at 10, 5, 4, 3, 2, 1
+        const currentSecond = Math.ceil(this.timeRemaining);
+        if (currentSecond <= 10 && currentSecond !== this.lastTimeWarning) {
+            this.lastTimeWarning = currentSecond;
+            soundManager.playTimeWarning();
+        }
+
         // Update game objects
         this.spaceship.update();
         this.spawner.update();
@@ -171,6 +180,16 @@ export class Game {
             )) {
                 collectible.collected = true;
                 this.addScore(collectible.points, collectible.type);
+
+                // Play sound based on collectible type
+                if (collectible.type === 'coin') {
+                    soundManager.playCoinCollect();
+                } else if (collectible.type === 'gem') {
+                    soundManager.playGemCollect();
+                } else {
+                    soundManager.playStarCollect();
+                }
+
                 this.particles.emitCollect(
                     collectible.x,
                     collectible.y,
@@ -195,6 +214,7 @@ export class Game {
                 obstacle.active = false;
                 this.hitObstacle();
                 this.particles.emitExplosion(obstacle.x, obstacle.y);
+                soundManager.playHit();
             }
         }
 
@@ -272,6 +292,7 @@ export class Game {
         this.reset();
         this.state = 'playing';
         this.onStateChange?.(this.state);
+        soundManager.playGameStart();
     }
 
     public pause(): void {
@@ -291,6 +312,7 @@ export class Game {
     private gameOver(): void {
         this.state = 'gameover';
         this.onStateChange?.(this.state);
+        soundManager.playGameOver();
 
         const highScore = getHighScore();
         const isNew = isHighScore(this.score);
@@ -315,6 +337,11 @@ export class Game {
             isNewHighScore: isNew && this.score > highScore,
         };
 
+        // Play high score fanfare if applicable
+        if (stats.isNewHighScore) {
+            setTimeout(() => soundManager.playHighScore(), 500);
+        }
+
         this.onGameOver?.(stats);
     }
 
@@ -325,6 +352,7 @@ export class Game {
         this.stars = 0;
         this.timeRemaining = GAME_CONFIG.GAME_DURATION;
         this.screenShake = 0;
+        this.lastTimeWarning = 0;
 
         this.spaceship.reset();
         this.spawner.reset();

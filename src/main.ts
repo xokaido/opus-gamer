@@ -19,6 +19,7 @@ import {
 import type { ScoreEntry } from './storage/ScoreStorage';
 import { formatScore, formatTime } from './utils/helpers';
 import { GAME_CONFIG } from './utils/constants';
+import { soundManager } from './audio/SoundManager';
 
 class SpaceCollectorApp {
   private game: Game | null = null;
@@ -197,6 +198,14 @@ class SpaceCollectorApp {
   }
 
   private bindEvents(): void {
+    // Add click sounds to all buttons
+    document.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.btn, .language-btn');
+      if (btn) {
+        soundManager.playClick();
+      }
+    });
+
     // Language switcher
     document.getElementById('language-switcher')!.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest('.language-btn');
