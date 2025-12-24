@@ -47,20 +47,19 @@ class SpaceCollectorApp {
   private createUI(): void {
     this.gameContainer.innerHTML = `
       <div class="game-container">
-        <!-- Header with language switcher -->
-        <div class="header-area">
-          <div class="language-switcher" id="language-switcher">
-            ${getAvailableLanguages().map(lang => `
-              <button class="language-btn ${getCurrentLanguage() === lang.code ? 'active' : ''}" 
-                      data-lang="${lang.code}">
-                ${lang.nativeName}
-              </button>
-            `).join('')}
-          </div>
-        </div>
-        
         <!-- Start Screen -->
         <div class="screen start-screen" id="start-screen">
+          <div class="header-area">
+            <div class="language-switcher" id="language-switcher">
+              ${getAvailableLanguages().map(lang => `
+                <button class="language-btn ${getCurrentLanguage() === lang.code ? 'active' : ''}" 
+                        data-lang="${lang.code}">
+                  ${lang.nativeName}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
           <div class="animate-float">
             <h1 class="game-title" data-i18n="appName">${t('appName')}</h1>
           </div>
