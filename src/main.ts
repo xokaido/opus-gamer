@@ -311,17 +311,27 @@ class SpaceCollectorApp {
     // Start game immediately
     this.game.start();
 
-    // Register name in background
-    registerName(requestedName).then(finalName => {
-      if (finalName !== requestedName) {
-        console.log(`Name updated to unique: ${finalName}`);
-        setPlayerName(finalName);
-        // Update input for next time
-        nameInput.value = finalName;
-      } else {
-        setPlayerName(requestedName);
-      }
-    });
+    // Check if we need to register the name (optimization)
+    const lastRegisteredName = localStorage.getItem('last_registered_name');
+
+    if (requestedName !== lastRegisteredName) {
+      // Register name in background
+      registerName(requestedName).then(finalName => {
+        // Update last registered name on success
+        localStorage.setItem('last_registered_name', finalName);
+
+        if (finalName !== requestedName) {
+          console.log(`Name updated to unique: ${finalName}`);
+          setPlayerName(finalName);
+          // Update input for next time
+          nameInput.value = finalName;
+        } else {
+          setPlayerName(requestedName);
+        }
+      });
+    } else {
+      console.log('Skipping registration, name unchanged.');
+    }
   }
 
   private handleGameStateChange(state: GameState): void {
