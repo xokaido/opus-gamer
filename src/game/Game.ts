@@ -44,6 +44,10 @@ export class Game {
     private screenShake: number = 0;
     private lastTimeWarning: number = 0;
 
+    // Screen flash effect
+    private flashColor: string = '#000000';
+    private flashAlpha: number = 0;
+
     // Event callbacks
     public onStateChange?: (state: GameState) => void;
     public onScoreChange?: (score: number) => void;
@@ -181,22 +185,39 @@ export class Game {
                 collectible.collected = true;
                 this.addScore(collectible.points, collectible.type);
 
-                // Play sound based on collectible type
-                if (collectible.type === 'coin') {
-                    soundManager.playCoinCollect();
-                } else if (collectible.type === 'gem') {
-                    soundManager.playGemCollect();
+                // Handle time bonuses/penalties
+                if (collectible.type === 'enhancer') {
+                    this.timeRemaining += GAME_CONFIG.ENHANCER_TIME;
+                    this.onTimeChange?.(Math.ceil(this.timeRemaining));
+                    this.particles.emitCollect(collectible.x, collectible.y, COLORS.NEON_GREEN);
+                    this.particles.emitText(collectible.x, collectible.y, `+${GAME_CONFIG.ENHANCER_TIME}s`, COLORS.NEON_GREEN, 40);
+                    this.triggerFlash(COLORS.NEON_GREEN, 0.3);
+                    soundManager.playStarCollect(); // Reuse star sound or pick another
+                } else if (collectible.type === 'reducer') {
+                    this.timeRemaining = Math.max(0, this.timeRemaining - GAME_CONFIG.REDUCER_TIME);
+                    this.onTimeChange?.(Math.ceil(this.timeRemaining));
+                    this.particles.emitCollect(collectible.x, collectible.y, COLORS.NEON_PINK);
+                    this.particles.emitText(collectible.x, collectible.y, `-${GAME_CONFIG.REDUCER_TIME}s`, COLORS.NEON_PINK, 40);
+                    this.triggerFlash(COLORS.NEON_PINK, 0.3);
+                    soundManager.playHit(); // Reuse hit sound or pick another
                 } else {
-                    soundManager.playStarCollect();
-                }
+                    // Play sound based on collectible type
+                    if (collectible.type === 'coin') {
+                        soundManager.playCoinCollect();
+                    } else if (collectible.type === 'gem') {
+                        soundManager.playGemCollect();
+                    } else {
+                        soundManager.playStarCollect();
+                    }
 
-                this.particles.emitCollect(
-                    collectible.x,
-                    collectible.y,
-                    collectible.type === 'coin' ? COLORS.NEON_GOLD :
-                        collectible.type === 'gem' ? COLORS.NEON_PURPLE :
-                            COLORS.NEON_BLUE
-                );
+                    this.particles.emitCollect(
+                        collectible.x,
+                        collectible.y,
+                        collectible.type === 'coin' ? COLORS.NEON_GOLD :
+                            collectible.type === 'gem' ? COLORS.NEON_PURPLE :
+                                COLORS.NEON_BLUE
+                    );
+                }
             }
         }
 
@@ -226,6 +247,12 @@ export class Game {
             this.screenShake *= 0.9;
             if (this.screenShake < 0.1) this.screenShake = 0;
         }
+
+        // Update flash
+        if (this.flashAlpha > 0) {
+            this.flashAlpha -= 0.05;
+            if (this.flashAlpha < 0) this.flashAlpha = 0;
+        }
     }
 
     private render(): void {
@@ -242,6 +269,10 @@ export class Game {
         this.canvas.clear();
         this.canvas.renderStars();
 
+        // Render flash under game objects or over? Over might be better for impact, or under UI.
+        // Let's render everything then flash over it? Or background -> flash -> objects?
+        // Let's do Background -> Objects -> Particles -> Flash so it tints everything.
+
         if (this.state === 'playing' || this.state === 'paused') {
             // Render game objects
             for (const collectible of this.spawner.collectibles) {
@@ -257,6 +288,14 @@ export class Game {
 
         // Always render particles
         this.particles.render(this.ctx);
+
+        // Render flash overlay
+        if (this.flashAlpha > 0) {
+            this.ctx.fillStyle = this.flashColor;
+            this.ctx.globalAlpha = this.flashAlpha;
+            this.ctx.fillRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
+            this.ctx.globalAlpha = 1;
+        }
 
         this.ctx.restore();
     }
@@ -286,6 +325,13 @@ export class Game {
 
         // Lose 2 seconds
         this.timeRemaining = Math.max(0, this.timeRemaining - 2);
+        this.particles.emitText(this.spaceship.x, this.spaceship.y - 20, '-2s', COLORS.NEON_PINK, 30);
+        this.triggerFlash(COLORS.NEON_PINK, 0.2);
+    }
+
+    private triggerFlash(color: string, intensity: number): void {
+        this.flashColor = color;
+        this.flashAlpha = intensity;
     }
 
     public start(): void {
@@ -353,6 +399,7 @@ export class Game {
         this.timeRemaining = GAME_CONFIG.GAME_DURATION;
         this.screenShake = 0;
         this.lastTimeWarning = 0;
+        this.flashAlpha = 0;
 
         this.spaceship.reset();
         this.spawner.reset();

@@ -11,7 +11,8 @@ export interface Particle {
     maxLife: number;
     size: number;
     color: string;
-    type: 'explosion' | 'collect' | 'trail';
+    type: 'explosion' | 'collect' | 'trail' | 'text';
+    text?: string;
 }
 
 export class ParticleSystem {
@@ -63,6 +64,21 @@ export class ParticleSystem {
         this.emit(x, y, 1, COLORS.NEON_BLUE, 'trail');
     }
 
+    public emitText(x: number, y: number, text: string, color: string, fontSize: number = 20): void {
+        this.particles.push({
+            x,
+            y,
+            vx: 0,
+            vy: -2, // Float up faster
+            life: 1,
+            maxLife: 1,
+            size: fontSize,
+            color,
+            type: 'text',
+            text,
+        });
+    }
+
     public update(): void {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
@@ -106,11 +122,23 @@ export class ParticleSystem {
             ctx.fillStyle = glow;
             ctx.fill();
 
-            // Core
             ctx.beginPath();
             ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
             ctx.fillStyle = p.color;
             ctx.fill();
+
+            if (p.type === 'text' && p.text) {
+                // Text shouldn't shrink, just fade and float
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.font = `bold ${p.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 4;
+                ctx.fillText(p.text, p.x, p.y);
+                ctx.restore();
+            }
 
             ctx.restore();
         }

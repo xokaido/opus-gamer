@@ -79,9 +79,11 @@ export class Spawner {
 
     private getRandomCollectibleType(): CollectibleType {
         const rand = Math.random();
-        if (rand < 0.6) return 'coin';
-        if (rand < 0.85) return 'star';
-        return 'gem';
+        if (rand < 0.5) return 'coin';
+        if (rand < 0.75) return 'star';
+        if (rand < 0.85) return 'gem';
+        if (rand < 0.92) return 'enhancer';
+        return 'reducer';
     }
 
     public getScrollSpeed(): number {

@@ -2,7 +2,7 @@
 import { GAME_CONFIG, COLORS } from '../utils/constants';
 import { randomBetween } from '../utils/helpers';
 
-export type CollectibleType = 'coin' | 'gem' | 'star';
+export type CollectibleType = 'coin' | 'gem' | 'star' | 'enhancer' | 'reducer';
 
 export interface CollectibleConfig {
     type: CollectibleType;
@@ -30,6 +30,18 @@ const COLLECTIBLE_CONFIGS: Record<CollectibleType, Omit<CollectibleConfig, 'type
         points: GAME_CONFIG.STAR_POINTS,
         color: COLORS.NEON_BLUE,
         glowColor: 'rgba(0, 212, 255, 0.5)',
+    },
+    enhancer: {
+        radius: GAME_CONFIG.ENHANCER_RADIUS,
+        points: 0,
+        color: COLORS.NEON_GREEN,
+        glowColor: 'rgba(0, 255, 136, 0.5)',
+    },
+    reducer: {
+        radius: GAME_CONFIG.REDUCER_RADIUS,
+        points: 0,
+        color: COLORS.NEON_PINK,
+        glowColor: 'rgba(255, 0, 255, 0.5)',
     },
 };
 
@@ -98,6 +110,12 @@ export class Collectible {
                 break;
             case 'star':
                 this.renderStar(ctx);
+                break;
+            case 'enhancer':
+                this.renderEnhancer(ctx);
+                break;
+            case 'reducer':
+                this.renderReducer(ctx);
                 break;
         }
 
@@ -206,6 +224,88 @@ export class Collectible {
         // Border
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    private renderEnhancer(ctx: CanvasRenderingContext2D): void {
+        const r = this.radius;
+
+        // Clock circle
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.5, this.color);
+        gradient.addColorStop(1, '#00aa66');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Clock face center
+        ctx.beginPath();
+        ctx.arc(0, 0, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // Clock hands
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -r * 0.6); // Hour hand
+        ctx.moveTo(0, 0);
+        ctx.lineTo(r * 0.4, 0); // Minute hand
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+
+    private renderReducer(ctx: CanvasRenderingContext2D): void {
+        const r = this.radius;
+        const w = r * 0.7;
+        const h = r * 0.9;
+
+        // Hourglass body
+        ctx.beginPath();
+        ctx.moveTo(-w, -h);
+        ctx.lineTo(w, -h);
+        ctx.lineTo(-w, h);
+        ctx.lineTo(w, h);
+        ctx.closePath();
+
+        const gradient = ctx.createLinearGradient(0, -h, 0, h);
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(0.5, '#ffffff');
+        gradient.addColorStop(1, this.color);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Sand
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.6, -h * 0.8);
+        ctx.lineTo(w * 0.6, -h * 0.8);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-w * 0.8, h * 0.8);
+        ctx.lineTo(w * 0.8, h * 0.8);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fill();
+
+        // Frames
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-w, -h); ctx.lineTo(w, -h);
+        ctx.moveTo(-w, h); ctx.lineTo(w, h);
         ctx.stroke();
     }
 
