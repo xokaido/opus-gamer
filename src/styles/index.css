@@ -298,7 +298,7 @@ body {
     left: var(--spacing-md);
     right: var(--spacing-md);
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     z-index: 50;
 }
 
