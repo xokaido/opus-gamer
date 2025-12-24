@@ -12,3 +12,12 @@ routes = [
 # This serves files from ./dist as static assets
 [assets]
 directory = "./dist"
+
+[durable_objects]
+bindings = [
+  { name = "SCOREBOARD", class_name = "Scoreboard" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["Scoreboard"]

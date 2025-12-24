@@ -12,7 +12,6 @@ import {
 import type { Language } from './i18n';
 import {
   getHighScore,
-  getScores,
   getPlayerName,
   setPlayerName,
 } from './storage/ScoreStorage';
@@ -20,6 +19,7 @@ import type { ScoreEntry } from './storage/ScoreStorage';
 import { formatScore, formatTime } from './utils/helpers';
 import { GAME_CONFIG } from './utils/constants';
 import { soundManager } from './audio/SoundManager';
+import { submitScore, getLeaderboard, registerName } from './utils/api';
 
 class SpaceCollectorApp {
   private game: Game | null = null;
@@ -272,7 +272,8 @@ class SpaceCollectorApp {
   private startGame(): void {
     // Save player name
     const nameInput = document.getElementById('player-name-input') as HTMLInputElement;
-    setPlayerName(nameInput.value || 'Player');
+    const requestedName = nameInput.value || 'Player';
+    setPlayerName(requestedName);
 
     this.showScreen('game');
 
@@ -307,7 +308,20 @@ class SpaceCollectorApp {
       };
     }
 
+    // Start game immediately
     this.game.start();
+
+    // Register name in background
+    registerName(requestedName).then(finalName => {
+      if (finalName !== requestedName) {
+        console.log(`Name updated to unique: ${finalName}`);
+        setPlayerName(finalName);
+        // Update input for next time
+        nameInput.value = finalName;
+      } else {
+        setPlayerName(requestedName);
+      }
+    });
   }
 
   private handleGameStateChange(state: GameState): void {
@@ -343,27 +357,56 @@ class SpaceCollectorApp {
     }
 
     this.showScreen('gameover');
+
+    // Submit score to global leaderboard
+    const playerName = getPlayerName();
+    if (stats.score > 0) {
+      submitScore(playerName, stats.score)
+        .then(() => {
+          console.log('Score submitted successfully');
+          // Optional: Verify if we want to auto-refresh leaderboard or similar
+        })
+        .catch(err => console.error('Failed to submit score:', err));
+    }
   }
 
-  private showLeaderboard(): void {
+  private async showLeaderboard(): Promise<void> {
     const container = document.getElementById('leaderboard-container')!;
-    const scores = getScores();
 
-    if (scores.length === 0) {
-      container.innerHTML = `
-        <p style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">
-          ${t('noScores')}
-        </p>
-      `;
-    } else {
-      container.innerHTML = `
-        <ul class="leaderboard-list">
-          ${scores.map((entry, index) => this.renderLeaderboardItem(entry, index)).join('')}
-        </ul>
-      `;
-    }
+    // Show loading state
+    container.innerHTML = `
+      <div style="text-align: center; padding: var(--spacing-lg);">
+        <div class="loading-spinner" style="margin: 0 auto;"></div>
+        <p style="margin-top: 1rem; color: var(--text-secondary);">Loading scores...</p>
+      </div>
+    `;
 
     this.showScreen('leaderboard');
+
+    try {
+      // Fetch global scores
+      const scores = await getLeaderboard();
+
+      if (scores.length === 0) {
+        container.innerHTML = `
+          <p style="text-align: center; padding: var(--spacing-lg); color: var(--text-secondary);">
+            ${t('noScores')}
+          </p>
+        `;
+      } else {
+        container.innerHTML = `
+          <ul class="leaderboard-list">
+            ${scores.map((entry, index) => this.renderLeaderboardItem(entry, index)).join('')}
+          </ul>
+        `;
+      }
+    } catch (err) {
+      container.innerHTML = `
+        <p style="text-align: center; padding: var(--spacing-lg); color: var(--text-error);">
+          Failed to load leaderboard. Please try again later.
+        </p>
+      `;
+    }
   }
 
   private renderLeaderboardItem(entry: ScoreEntry, index: number): string {
